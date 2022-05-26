@@ -7,7 +7,6 @@ import contextlib
 import cachetools
 import threading
 
-
 from ChromeController.manager import ChromeRemoteDebugInterface
 
 

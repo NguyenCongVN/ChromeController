@@ -39,6 +39,7 @@ class ChromeExecutionManager():
     def __init__(self,
                  binary,
                  base_tab_key,
+                 is_existing,
                  host='localhost',
                  port=None,
                  websocket_timeout=10,
@@ -75,6 +76,7 @@ class ChromeExecutionManager():
         ACTIVE_PORTS.add(port)
 
         self.binary = binary
+        self.is_existing = is_existing
         self.host = host
         self.port = port
         self.headless = headless
@@ -97,7 +99,7 @@ class ChromeExecutionManager():
         # Not sure which.
         for x in range(999):
             try:
-                self._launch_process(self.binary, self.port, base_tab_key, additional_options)
+                self._launch_process(self.binary, self.port, self.is_existing, base_tab_key, additional_options)
                 break
             except cr_exceptions.ChromeConnectFailure:
                 if x > 3:
@@ -109,7 +111,7 @@ class ChromeExecutionManager():
         self._messages = {}
         self._message_filters = {}
 
-    def _launch_process(self, binary, dbg_port, base_tab_key, additional_options):
+    def _launch_process(self, binary, dbg_port, is_existing, base_tab_key, additional_options):
 
         if binary is None:
             binary = "chromium"
@@ -128,7 +130,7 @@ class ChromeExecutionManager():
             raise RuntimeError("Headless mode with XVFB does not make sense")
 
         prefix = []
-        if self.xvfb:
+        if self.xvfb and not is_existing:
             prefix = ['xvfb-run',
                       '-a',
                       '--server-args=-screen 0 1920x1080x24 -ac -nolisten tcp -dpi 96 +extension RANDR',
@@ -138,17 +140,23 @@ class ChromeExecutionManager():
         #     '--remote-debugging-port={dbg_port}'.format(dbg_port=dbg_port),
         #     '--enable-features=NetworkService',
         # ]
-
-        argv = prefix + [binary] + [
-            '--remote-debugging-port={dbg_port}'.format(dbg_port=dbg_port),
-            '--enable-features=NetworkService',
-        ]
-        if self.headless:
+        if is_existing:  # if use existing chrome.
+            argv = prefix + [binary] + [
+                'TCP-LISTEN:{dbg_port},fork,reuseaddr'.format(dbg_port=dbg_port),
+                'TCP:127.0.0.1:9222'
+            ]
+        else:
+            argv = prefix + [binary] + [
+                '--remote-debugging-port={dbg_port}'.format(dbg_port=dbg_port),
+                '--enable-features=NetworkService',
+            ]
+        if self.headless and not is_existing:
             argv.append('--headless')
 
-        if self.enable_gpu is False:
+        if self.enable_gpu is False and not is_existing:
             argv.append('--disable-gpu')
-        argv += additional_options
+        if not is_existing:
+            argv += additional_options
 
         # We need a separate process group on windows,
         # to make ctrl+c work properly.
@@ -168,7 +176,6 @@ class ChromeExecutionManager():
                                         creationflags=creationflags,
                                         preexec_fn=preexec_fn,
                                         )
-
         self.log.debug("Spawned process: %s, PID: %s", self.cr_proc, self.cr_proc.pid)
         for x in range(100):
             self._check_process_dead()

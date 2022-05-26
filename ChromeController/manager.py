@@ -21,7 +21,7 @@ from ChromeController.resources import js
 # We use the generated wrapper. If you want a different version, use the CLI interface to update.
 from ChromeController.Generator.Generated import ChromeRemoteDebugInterface as ChromeRemoteDebugInterface_base
 
-DEFAULT_TIMEOUT_SECS = 10
+DEFAULT_TIMEOUT_SECS = 20
 
 
 class RemoteObject():
@@ -40,6 +40,7 @@ class ChromeRemoteDebugInterface(ChromeRemoteDebugInterface_base):
 
     def __init__(self,
                  binary=None,
+                 is_existing=False,
                  dbg_port=None,
                  use_execution_manager=None,
                  additional_options=[],
@@ -51,6 +52,7 @@ class ChromeRemoteDebugInterface(ChromeRemoteDebugInterface_base):
                  **kwargs):
         super().__init__(
             binary=binary,
+            is_existing=is_existing,
             dbg_port=dbg_port,
             use_execution_manager=use_execution_manager,
             additional_options=additional_options,

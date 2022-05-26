@@ -185,7 +185,7 @@ class ChromeInterface(ChromeListenerMixin):
     Document me, maybe?
     """
 
-    def __init__(self, binary, dbg_port, use_execution_manager, additional_options, *args, **kwargs):
+    def __init__(self, binary, dbg_port, is_existing, use_execution_manager, additional_options, *args, **kwargs):
         """
         Base chromium transport initialization.
 
@@ -236,6 +236,7 @@ class ChromeInterface(ChromeListenerMixin):
             self.transport = ChromeExecutionManager(
                 binary=binary,
                 port=dbg_port,
+                is_existing=is_existing,
                 base_tab_key=self.tab_id,
                 additional_options=additional_options,
                 *args,
